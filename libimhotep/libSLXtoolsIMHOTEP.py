@@ -857,14 +857,21 @@ def Fpltgridparamdefaults(reg='GLO',gridl=False,incrgridlon=45,incrgridlat=30,sa
         latcentr=5
         loncentr=110
 
-    if reg=='bof':
+    if reg=='bob':
+        loncentr=90
+        latcentr=0
+        sath=35785831
+        axextent = [77, 98, 8, 25]
+        minlat=axextent[2]
+        maxlat=axextent[3]
+        
+    if reg=='bob2':
         loncentr=90
         latcentr=0
         sath=35785831
         axextent = [77, 98, 12, 25]
         minlat=axextent[2]
         maxlat=axextent[3]
-        
         
     if reg=='ind':
         loncentr=90
