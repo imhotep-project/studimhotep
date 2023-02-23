@@ -249,8 +249,133 @@ def Ffindinputdfiles(nexp,diri,fo,prefix="eORCA025.L75-IMHOTEP",fity='gridTsurf'
 
 
 
+def Ftrpolyfit2(xrar,obs=False):
+    """ Compute linear regression(y = a*t + b) from input data.
+    
+    Based on  http://atedstone.github.io/rate-of-change-maps/
+
+    Parameters:
+    - xar (xarray): input data to compute the linear regression from.
+    - obs (str): True if the input data is from obs dataset. Default is False (model dataset). 
+        Will change the name of the time coordinate to read (time_counter for model data, and time for obs).
+        The obs option is not working yet.
+    
+    Returns:
+    xrtrends:  trend coefficient (xarray). This is the a value from the linear regression in y = a*t + b.
+    xrorigins: origin value (xarray). This is the b value from the linear regression in y = a*t + b.
+    years: time index in years (xarray). Can be decimal years if input data was monthly.
+
+   """
+   
+    vals = xrar.values 
+    
+    if obs==False:
+            timeJulian = xrar.time_counter.to_index().to_julian_date()
+
+    else:
+            timeJulian = xrar.time.to_index().to_julian_date()
+        
+    # Reshape to an array with as many rows as years and as many columns as there are pixels
+    vals2 = vals.reshape(len(timeJulian), -1)
+
+    # Do a first-degree polyfit
+    regressions = np.polyfit(timeJulian, vals2, 1)
+
+    # Get the coefficients back
+    trends     = regressions[0,:].reshape(vals.shape[1], vals.shape[2])
+    origins    = regressions[1,:].reshape(vals.shape[1], vals.shape[2])
+    
+    # if input  data is from model, the coordinates are x,y
+    coordsname = ['x','y']
+    
+    # if input  data is from ESA-CCI obs, the coordinates are changed to lon,lat
+    if obs==True:
+        coordsname = ['lon','lat']
+        
+     # make it back to xarray format
+    xrtrends = xr.DataArray(
+            data=trends,
+            dims=[coordsname[1], coordsname[0]],
+            attrs=dict(
+                description="trend coeff",
+                units="(g/kg)/day"
+            ),
+    )
+    
+    xrorigins = xr.DataArray(
+            data=origins,
+            dims=[coordsname[1], coordsname[0]],
+            attrs=dict(
+                description="b value",
+                units="(g/kg)"
+            ),
+    )
+    return xrtrends,xrorigins,timeJulian
+
+
+def Ftrseries2(xrar,obs=False):
+    """Compute linear trend timeseries
+    
+    This function calls the Ftrpolyfit function (that computes linear coefficient and origin value, from initial data)
+    and uses it to build the trend timeseries for the time values (in Julian days years). 
+    
+    Parameters:
+    - obs (str): True if the input data is from obs dataset. Default is False (model dataset). If obs is True, 
+      the time coordinate is 'time', if dat is False, the time coordinate is 'time_counter' (model dataset).
+      
+    Usage:
+       ```
+       tr,xrtrends,xrorigins = Ftrseries2(data)
+       data_dt = data - tr
+       data.isel(x=1050,y=1050).plot()
+       tr.isel(x=1050,y=1050).plot()
+       ```
+
+    Returns:
+    xarray: tr   : trend timeseries over same time period as input data
+    xarray: xrtrends  : trend coefficient in unit/year  
+    xarray: xrorigins :origin coefficient in same unit as input data.
+
+    """
+    
+    # calls Ftrpolyfit2 to compute the linear coeffs a and b   (y=ax+b)
+    xrtrends,xrorigins,timeJulian = Ftrpolyfit2(xrar,obs=False)
+
+    ic=-1
+    # loop on timesteps from input data
+    for itj in timeJulian:
+        ic = ic+1
+        lintr  = itj*xrtrends
+        lintro = xrorigins
+
+        # concatenate values in same array
+        if obs==False:
+            tmp = lintro.expand_dims(dim='time_counter',axis=0) + lintr.expand_dims(dim='time_counter',axis=0)
+            if (ic!= 0):
+                tr = xr.concat([tr, tmp], dim="time_counter")
+            else:
+                tr = tmp
+        else:
+            tmp = lintro.expand_dims(dim='time',axis=0) + lintr.expand_dims(dim='time',axis=0)
+            if (ic!= 0):
+                tr = xr.concat([tr, tmp], dim="time")
+            else:
+                tr = tmp
+    if obs==False:
+        tr = tr.assign_coords({"time_counter": xrar.time_counter})
+    else:
+        tr = tr.assign_coords({"time": xrar.time})
+        
+    # convert trend values from unit/day to unit/year    
+    xrtrends = xrtrends*365.25
+    xrtrends['units'] = "(g/kg)/year"
+        
+    return tr,xrtrends,xrorigins
+
+
 def Ftrpolyfit(xrar,fty='1y',dat=False):
     """ Compute linear regression(y = a*t + b) from input data.
+        --- NOW REPLACED BY Ftrpolyfit2 ---
     
     Based on  http://atedstone.github.io/rate-of-change-maps/
     Usage: you need to convert to np array the input data before applying this polyfit function.
@@ -258,7 +383,7 @@ def Ftrpolyfit(xrar,fty='1y',dat=False):
     Parameters:
     - xar (numpy array): input data to compute the linear regression from.
     - fty (str): frequency of the input data ('1y','1m'). Doesn't work yet for bi-monthtly obs 'bimo'.
-    - dat (str): True if the input data is from obs dataset. Default is False (model dataset).
+    - dat (str): True if the input data is from obs dataset. Default is False (model dataset). Will change the name of the time coordinate to read (time_counter for model data, and time for obs)
     
     Returns:
     xrtrends:  trend coefficient (xarray). This is the a value from the linear regression in y = a*t + b.
@@ -304,7 +429,7 @@ def Ftrpolyfit(xrar,fty='1y',dat=False):
     regressions = np.polyfit(years, vals2, 1)
 
     # Get the coefficients back
-    trends = regressions[0,:].reshape(vals.shape[1], vals.shape[2])
+    trends     = regressions[0,:].reshape(vals.shape[1], vals.shape[2])
     origins    = regressions[1,:].reshape(vals.shape[1], vals.shape[2])
 
     # if input  data is from model, the coordinates are x,y
@@ -336,6 +461,7 @@ def Ftrpolyfit(xrar,fty='1y',dat=False):
 
 def Ftrseries(xrtrends,xrorigins,ty,tc,dat=False):
     """Compute linear trend timeseries from linear regression coeffs.
+        --- NOW REPLACED BY Ftrseries2 ---
     
     This function takes the result from the Ftrpolyfit function (linear coefficient, origin value, and time in years)
     and uses it to build the trend timeseries for the ty time values (dcimal years). 
@@ -1516,7 +1642,8 @@ class imhov:
             d2=str(self.y2)+'-12-31T00:00:00.000000000'
             self.data = xr.open_mfdataset(self.origin,decode_times=True)[self.varna].sel(time=slice(d1,d2))
         else:
-
+            
+            self.timecod = xr.open_mfdataset(self.origin,decode_times=False)[self.varna]
             # if difference to be compûted, 2 datasets have to be loaded (self.data1 and self.data2)
             if self.diff:
                 if self.lev==-1:
@@ -1551,8 +1678,9 @@ class imhov:
 
 
 
-    def detrend(self,fo='1y'):  
+    def detrend_old(self,fo='1y'):  
         """Detrend data of the imhov instance.
+      --- REPLACED BY NEW detrend ---
 
         Parameters:
         - self (instance of imhov class)
@@ -1577,6 +1705,32 @@ class imhov:
             self.atr2,xrorigins2,years = Ftrpolyfit(self.data2,fo,dat=self.obs)
             # retrieve trend  timeseries
             ts_tr2 = Ftrseries(self.atr2,xrorigins2,years,self.data2.time_counter)
+            # retrieve detrended timeseries
+            self.data2_dt = self.data2 - ts_tr2
+   
+        return self
+
+    def detrend(self,fo='1y'):  
+        """Detrend data of the imhov instance.
+
+        Parameters:
+        - self (instance of imhov class)
+
+        Returns:
+        Modified instance of the imhov class. self.data_dt is added as well as self.data2_dt if diff set to True.
+
+        """
+        
+        # compute linear trend
+        ts_tr,self.atr,xrorigins = Ftrseries2(self.data,obs=self.obs)
+                
+        # retrieve detrended timeseries
+        self.data_dt = self.data - ts_tr
+        
+        if self.diff:
+            # compute linear trend
+            ts_tr2,self.atr2,xrorigins2 = Ftrseries2(self.data2,obs=self.obs)
+
             # retrieve detrended timeseries
             self.data2_dt = self.data2 - ts_tr2
    
