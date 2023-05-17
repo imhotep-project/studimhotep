@@ -270,7 +270,11 @@ def Ftrpolyfit2(xrar,obs=False):
     vals = xrar.values 
     
     if obs==False:
-            timeJulian = xrar.time_counter.to_index().to_julian_date()
+            if hasattr(xrar.time_counter.to_index(), 'calendar'):
+                if (xrar.time_counter.to_index().calendar=='noleap'):
+                    timeJulian = xrar.time_counter.to_index().to_datetimeindex().to_julian_date()
+            else:
+                timeJulian = xrar.time_counter.to_index().to_julian_date()
 
     else:
             timeJulian = xrar.time.to_index().to_julian_date()
@@ -1258,43 +1262,47 @@ def FrmGM(data,gm):
         return data_rmgm
 
 ## TODO in imhov class??? 
-def Fdata2plot(indat,ty='STD',imisc=0):
+def Fdata2plot(indat,ty='STD',imisc=0,imhov=True):
     """ Indicate which data to plot as a function of plot type
             
             Parameters:
             - ty (str): plot type
             - indat (imhov class instance)
             - imisc (int): index at which to read data if several timeseteps
+            - imhov (bool): True if indat is of class imhov. False if indat is just a simple xarray type.
     
             Return: 
             xarray: 2-D xarray to plot
     """
-    if ty== 'DIFF': 
-        data2plot  = indat.std_diff
-        print('Plot: imhov.std_diff')
-    elif ty== 'STD': 
-        data2plot  = indat.std_dt
-        print('Plot: imhov.std_dt')
-    elif ty== 'TM': 
-        data2plot  = indat.tm
-        print('Plot: imhov.tm')
-    elif ty== 'TMDIFF': 
-        data2plot  = indat.tm_diff
-        print('Plot: imhov.tm_diff')
-    elif ty== 'TR': 
-        data2plot  = indat.atr
-        print('Plot: imhov.atr')
-    elif ty== 'TRDIFF': 
-        data2plot  = indat.tr_diff
-        print('Plot: imhov.tr_diff')
-    elif ((ty== 'ESPR')|(ty== 'EM')): 
-        data2plot  = indat.data.isel(time_counter=imisc) 
-        print('Plot: imhov.data.isel(time_counter=imisc) ')
-    elif (ty== 'EMDIFF'): 
-        data2plot  = indat.data_diff.isel(time_counter=imisc)
-        print('Plot: imhov.data_diff.isel(time_counter=imisc)')
+    if imhov:
+        if ty== 'DIFF': 
+            data2plot  = indat.std_diff
+            print('Plot: imhov.std_diff')
+        elif ty== 'STD': 
+            data2plot  = indat.std_dt
+            print('Plot: imhov.std_dt')
+        elif ty== 'TM': 
+            data2plot  = indat.tm
+            print('Plot: imhov.tm')
+        elif ty== 'TMDIFF': 
+            data2plot  = indat.tm_diff
+            print('Plot: imhov.tm_diff')
+        elif ty== 'TR': 
+            data2plot  = indat.atr
+            print('Plot: imhov.atr')
+        elif ty== 'TRDIFF': 
+            data2plot  = indat.tr_diff
+            print('Plot: imhov.tr_diff')
+        elif ((ty== 'ESPR')|(ty== 'EM')): 
+            data2plot  = indat.data.isel(time_counter=imisc) 
+            print('Plot: imhov.data.isel(time_counter=imisc) ')
+        elif (ty== 'EMDIFF'): 
+            data2plot  = indat.data_diff.isel(time_counter=imisc)
+            print('Plot: imhov.data_diff.isel(time_counter=imisc)')
+        else:
+            data2plot  = indat.data.mean(dim='time_counter')
     else:
-        data2plot  = indat.data.mean(dim='time_counter')
+        data2plot  = indat.isel(time_counter=imisc) 
         
     return data2plot
     
@@ -1348,7 +1356,7 @@ def Fpltcircles(selrnf,trdata,pltcirclesparam='no'):
     
     
     
-def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro="./",siplt=False,saveo=False,pltshow=True,cbon=False,suffix="",selrnf="no",pltcircles=False,pltcirclesparam='no',fo='1d',imisc=0,cl=True,pltmarkersparam='no',**kwargs):
+def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro="./",siplt=False,saveo=False,pltshow=True,cbon=False,suffix="",selrnf="no",pltcircles=False,pltcirclesparam='no',fo='1d',imisc=0,imhov=True,cl=True,pltmarkersparam='no',**kwargs):
     """
     Plot Global map
 
@@ -1377,8 +1385,8 @@ def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro=".
    """
 
     #---  choose data to plot given the type of plot 'ty'
-    if (indat!=0):
-        data2plot = Fdata2plot(indat,ty=ty,imisc=imisc)
+    if (indat.all()!=0):
+        data2plot = Fdata2plot(indat,ty=ty,imisc=imisc,imhov=imhov)
         #---  take care of masking where no data
         # if indat is obs
         if indat.obs:
@@ -1594,7 +1602,7 @@ class imhov:
 
         """
         self.loaddata()
-        self.detrend(fo=self.fo)
+        self.detrend()
         self.tmcompute()
         self.stdcompute()
         self.loadgridinfo(type=typ)  # todo: improve type t later on    
@@ -1710,7 +1718,7 @@ class imhov:
    
         return self
 
-    def detrend(self,fo='1y'):  
+    def detrend(self):  
         """Detrend data of the imhov instance.
 
         Parameters:
@@ -1970,6 +1978,30 @@ class imhov:
         sortrnf = {'ty':ty,'threshold':per,'nav_lat_stack':nav_lat_stack,'nav_lon_stack':nav_lon_stack,'out_stack':out_stack,'p':p}
         return sortrnf 
     
+
+    def saveTR(self,trno=2,diro='./'):
+        """ Save Linear Trend in nc file
+            
+        Parameters:
+        - self (instance of imhov class)
+        - trno: save only var 1 or also var2
+        
+        Returns:
+        
+        """
+        fina = "TR_"+self.nexp+"_"+self.y1+"-"+self.y2+".nc"
+        self.atr.name = 'TR'
+        self.atr.attrs['exp'] =  self.nexp
+        self.atr.to_netcdf(diro+fina,mode='w',format='NETCDF4')
+
+        if trno==2:
+            fina2 = "TR_"+self.nexp2+"_"+self.y1+"-"+self.y2+".nc"
+            self.atr2.name = 'TR'
+            self.atr2.attrs['exp'] =  self.nexp2
+            self.atr2.to_netcdf(diro+fina2,mode='w',format='NETCDF4')
+
+            
+        return 
 
 if __name__ == "__main__":
     main()

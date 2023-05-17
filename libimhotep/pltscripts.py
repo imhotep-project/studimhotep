@@ -46,7 +46,7 @@ def __init__():
 def main():
     print('test')
     
-def pltDIFF(DIFF,diro):
+def pltDIFF(DIFF,diro,pltshow=False):
     #set default grid parameters before plotting
     gridparam = li.Fpltgridparamdefaults(reg='GLO')
     print('- gridparam')
@@ -63,10 +63,10 @@ def pltDIFF(DIFF,diro):
     print(pltparam)
 
     # plot
-    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='DIFF',diro=diro,siplt=False,saveo=True,pltshow=False,cbon=True,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
+    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='DIFF',diro=diro,siplt=False,saveo=True,pltshow=pltshow,cbon=True,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
     
     
-def pltSTD(DIFF,diro):
+def pltSTD(DIFF,diro,pltshow=False):
     #set default grid parameters before plotting
     gridparam = li.Fpltgridparamdefaults(reg='GLO')
     print('- gridparam')
@@ -82,7 +82,7 @@ def pltSTD(DIFF,diro):
     
     outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='STD',siplt=False,saveo=True,pltshow=False,diro=diro,cbon=True,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
     
-def pltTR(DIFF,diro,selrnf='no',pltcircles=False):
+def pltTR(DIFF,diro,selrnf='no',pltcircles=False,pltshow=False):
     #set default grid parameters before plotting
     gridparam = li.Fpltgridparamdefaults(reg='GLO')
     print('- gridparam')
@@ -103,10 +103,10 @@ def pltTR(DIFF,diro,selrnf='no',pltcircles=False):
     pltparam
 
     #selrnf=selrnftr
-    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TR',siplt=False,saveo=True,pltshow=False,diro=diro,cbon=True,strunits="g/kg/yr",pltcolparam=pltcolparam,selrnf=selrnf,pltcircles=pltcircles,pltcirclesparam=pltparam)
+    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TR',siplt=False,saveo=True,pltshow=pltshow,diro=diro,cbon=True,strunits="g/kg/yr",pltcolparam=pltcolparam,selrnf=selrnf,pltcircles=pltcircles,pltcirclesparam=pltparam)
 
     
-def pltTRDIFF(DIFF,diro,selrnf='no',pltcircles=False):
+def pltTRDIFF(DIFF,diro,selrnf='no',pltcircles=False,pltshow=False):
     #set default grid parameters before plotting
     gridparam = li.Fpltgridparamdefaults(reg='GLO')
     print('- gridparam')
@@ -125,7 +125,7 @@ def pltTRDIFF(DIFF,diro,selrnf='no',pltcircles=False):
     pltparam['mulmag']=600
 
     pltparam
-    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TRDIFF',siplt=False,saveo=True,pltshow=False,diro=diro,cbon=True,strunits="g/kg/yr",pltcolparam=pltcolparam,selrnf=selrnf,pltcircles=pltcircles,suffix="colorbar",pltcirclesparam=pltparam)
+    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TRDIFF',siplt=False,saveo=True,pltshow=pltshow,diro=diro,cbon=True,strunits="g/kg/yr",pltcolparam=pltcolparam,selrnf=selrnf,pltcircles=pltcircles,suffix="colorbar",pltcirclesparam=pltparam)
 
     
 def pltTM(DIFF,diro,reg='GLO',lev='def',cbincr='def'):
@@ -150,10 +150,10 @@ def pltTM(DIFF,diro,reg='GLO',lev='def',cbincr='def'):
     pltparam['linewidths']=0.6
     pltparam['edgecolors']='#FA5858'
 
-    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TM',siplt=False,saveo=True,cbon=True,pltshow=False,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
+    outo = li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TM',siplt=False,saveo=True,cbon=True,pltshow=pltshow,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
     
     
-def pltTMDIFF(DIFF,diro):
+def pltTMDIFF(DIFF,diro,pltshow=False):
     #set default grid parameters before plotting
     gridparam = li.Fpltgridparamdefaults(reg='GLO')
     print('- gridparam')
@@ -169,7 +169,7 @@ def pltTMDIFF(DIFF,diro):
     pltparam['linewidths']=0.3
     #pltparam['edgecolors']='#FA5858'
 
-    outo =li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TMDIFF',siplt=False,saveo=True,pltshow=False,cbon=True,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
+    outo =li.FpltGLO(DIFF,pltgridparam=gridparam,ty='TMDIFF',siplt=False,saveo=True,pltshow=pltshow,cbon=True,strunits="g/kg",pltcolparam=pltcolparam,selrnf='no',pltcircles=False,pltcirclesparam=pltparam)
     
     
 
