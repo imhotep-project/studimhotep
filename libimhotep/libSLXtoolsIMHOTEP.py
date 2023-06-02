@@ -141,7 +141,7 @@ def FloadcoordGP(dirigrid,gpx=[0],gpy=[0]):
                 GPlons = xr.concat([GPlons, lon], "gp") 
     return GPlats,GPlons
 
-def Ffindij(dirigrid,latval,lonval):
+def Ffindij(dirigrid,lonval,latval):
     """ Finds i,j coordinates nearest to latitude and longitude values
             
         Parameters:
