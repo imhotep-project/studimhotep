@@ -141,7 +141,7 @@ def FloadcoordGP(dirigrid,gpx=[0],gpy=[0]):
                 GPlons = xr.concat([GPlons, lon], "gp") 
     return GPlats,GPlons
 
-def Ffindij(dirigrid,lonval,latval):
+def Ffindij(dirigrid,lonval, latval):
     """ Finds i,j coordinates nearest to latitude and longitude values
             
         Parameters:
@@ -320,7 +320,7 @@ def Ftrpolyfit2(xrar,obs=False):
 def Ftrseries2(xrar,obs=False):
     """Compute linear trend timeseries
     
-    This function calls the Ftrpolyfit function (that computes linear coefficient and origin value, from initial data)
+    This function calls the Ftrpolyfit2 function (that computes linear coefficient and origin value, from initial data)
     and uses it to build the trend timeseries for the time values (in Julian days years). 
     
     Parameters:
@@ -901,10 +901,10 @@ def Faddmarkers(trdata,pltmarkersparam):
     s=pltmarkersparam['mulmag'],#700
     linewidths=pltmarkersparam['linewidths'], #0.3,
     marker=pltmarkersparam['marker'], #,
-    facecolors=color_list_big,#pltmarkersparam['facecolors']color_list,#, #none, 
-    edgecolors=color_list_big, #pltmarkersparam['edgecolors'], #'#08088A',
+    facecolors=pltmarkersparam['facecolors'],#pltmarkersparam['facecolors']color_list,#, #none, 
+    edgecolors=pltmarkersparam['edgecolors'], #pltmarkersparam['edgecolors'], #'#08088A',
     transform=trdata,
-    cmap=color_list,
+    cmap=pltmarkersparam['cmap'],
     zorder=20) 
             
 def Fsetmarkersparamdefaults(
@@ -915,11 +915,14 @@ def Fsetmarkersparamdefaults(
     linewidths=2,
     marker='x',
     facecolors = '#e74c3c',
-    edgecolors='#e74c3c'):
+    edgecolors='#e74c3c',
+    cmap='Spectral_r'):
     
     """Set my favourite default  parameters for plotting markers on map
 
-    Print it to remember what are the parameters.
+    Print it to remember what are the parameters:
+    pltmarkersparam = Fsetmarkersparamdefaults()
+    print(pltmarkersparam)
     
     Parameters:
     x (array): x positions,
@@ -928,10 +931,11 @@ def Fsetmarkersparamdefaults(
     mulmag (int): relative size of circles
     linewidths (float):
     marker (str):
-    facecolors (str): html color code
-    edgecolors (str): html color code
+    facecolors (str): html color code or list of
+    edgecolors (str): html color code or list of
+    cmap (str): colormap name. Default is 'Spectral_r'
     """
-    pltmarkersparam={'x':x,'y':y,'alpha':alpha,'mulmag':mulmag,'linewidths':linewidths,'marker':marker,'facecolors':facecolors,'edgecolors':edgecolors}
+    pltmarkersparam={'x':x,'y':y,'alpha':alpha,'mulmag':mulmag,'linewidths':linewidths,'marker':marker,'facecolors':facecolors,'edgecolors':edgecolors,'cmap':cmap}
     return pltmarkersparam
 
 def Fpltgridparamdefaults(reg='GLO',gridl=False,incrgridlon=45,incrgridlat=30,sath=35785831,minlat=-90,maxlat=90,minlon= -180,maxlon=180,loncentr=0,latcentr=10):
@@ -968,11 +972,9 @@ def Fpltgridparamdefaults(reg='GLO',gridl=False,incrgridlon=45,incrgridlat=30,sa
         loncentr=-35
         latcentr=10
         sath=35785831
-        minlat=-20.0
-        maxlat=35.0
-        minlon= -100
-        maxlon=-20
-        axextent = [minlon, maxlon, minlat, maxlat]
+        axextent = [-100, -20, -20, 35]
+        minlat=axextent[2]
+        maxlat=axextent[3]
         
     if reg=='tropatl':     
         loncentr=-50
@@ -1385,7 +1387,11 @@ def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro=".
    """
 
     #---  choose data to plot given the type of plot 'ty'
-    if (indat.all()!=0):
+    if (indat==0):
+        # case where the globe is plotted without data
+        print('Plotting map without data.')
+
+    else:
         data2plot = Fdata2plot(indat,ty=ty,imisc=imisc,imhov=imhov)
         #---  take care of masking where no data
         # if indat is obs
@@ -1401,10 +1407,7 @@ def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro=".
 
             if siplt:
                 maskedzone = data2plot.where(indat.siextentTM>0)
-    else:
-        # case where the globe is plotted without data
-       print('Plotting map without data.')
-
+            
     #--- set default color param
     if pltcolparam=='no':
         pltcolparam = Fpltsetcolorsdefaults(ty)
@@ -1502,13 +1505,13 @@ def FpltGLO(indat,pltgridparam,ty,reg='GLO',strunits="",pltcolparam='no',diro=".
         plt.show()
 
     if saveo:
-        if (indat!=0):
+        if (indat==0):
+             namo='examplemap'
+        else:
             if (((ty=="ESPR")|(ty=="EM"))|(ty=="EMDIFF")):
                 namo = Fdefnamoplt(indat,reg,ty,suffix=suffix,imisc=imisc)
             else:
                 namo = Fdefnamoplt(indat,reg,ty,suffix=suffix)
-        else:
-            namo='examplemap'
             
         Fsaveplt(fig3,diro,namo,dpifig=300)
         outo=diro+namo+'.png'
@@ -1586,7 +1589,7 @@ class imhov:
 
         More precisely, it will apply the following operations:
         - self.loaddata() # load data
-        - selfdetrend(fo=self.fo) # detrend datasets
+        - self.detrend(fo=self.fo) # detrend datasets
         - self.tmcompute() # compute time-mean of datasets
         - self.stdcompute() # compute time std of datasets
         - self.loadgridinfo(type='t')  # load grid info for later plotting needs
